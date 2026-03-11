@@ -4,6 +4,7 @@
 
 
 import { defineConfig, devices } from '@playwright/test';
+import { ENV } from './config/env';
 
 const isLocal = !process.env.CI;
 const isMaximized = process.env.MAXIMIZED || false;
@@ -18,7 +19,7 @@ module.exports = defineConfig({
     globalTeardown: require.resolve('./test-setup/global-teardown'),
 
     use: {
-        //baseURL: '',
+        baseURL: process.env.BASE_URL || ENV.BASE_URL || 'https://flipkart.com',
         headless: process.env.CI ? true : false,
         viewport: null, // Set custom size or maximize
         permissions: ['camera', 'microphone'],
