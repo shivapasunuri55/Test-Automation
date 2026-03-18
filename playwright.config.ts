@@ -4,6 +4,7 @@
 
 
 import { defineConfig, devices } from '@playwright/test';
+import { ENV } from '@config/env';
 
 const isLocal = !process.env.CI;
 const isMaximized = process.env.MAXIMIZED || false;
@@ -18,32 +19,32 @@ module.exports = defineConfig({
     globalTeardown: require.resolve('./test-setup/global-teardown'),
 
     use: {
-        //baseURL: '',
-        headless: process.env.CI ? true : false,
+        baseURL: ENV.BASE_URL || 'https://flipkart.com',
+        headless: ENV.HEADLESS === 'true',
         viewport: null, // Set custom size or maximize
         permissions: ['camera', 'microphone'],
         launchOptions: {
-            args: ['--start-fullscreen',
+            args: [
+                '--start-fullscreen',
                 '--use-fake-ui-for-media-stream',
                 '--use-fake-device-for-media-stream',
-                '--max-old-space-size=4096'
+                '--max-old-space-size=4096',
             ],
-
         },
         /* Records traces after each test failure for debugging purposes. */
         // trace: 'retain-on-failure',
         /* Captures screenshots after each test failure to provide visual context. */
         screenshot: 'only-on-failure',
         /* Sets a timeout for actions like click, fill, select to prevent long-running operations. */
-        actionTimeout: Number(process.env.long) || 30000,
+        actionTimeout: parseInt(ENV.TIMEOUTS.DEFAULT) || 30000,
         /* Sets a timeout for page loading navigations like goto URL, go back, reload, waitForNavigation to prevent long page loads. */
-        navigationTimeout: Number(process.env.long) || 30000,
+        navigationTimeout: parseInt(ENV.TIMEOUTS.DEFAULT) || 30000,
     },
     outputDir: 'test-results/', // Output directory for test artifacts
 
-    timeout: Number(process.env.long) || 60000,  // Increase timeout to handle longer test executions
+    timeout: parseInt(ENV.TIMEOUTS.LONG) || 60000, // Increase timeout to handle longer test executions
     expect: {
-        timeout: Number(process.env.long) || 10000,
+        timeout: parseInt(ENV.TIMEOUTS.DEFAULT) || 10000,
     },
     fullyParallel: false,
     /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -67,12 +68,13 @@ module.exports = defineConfig({
             {
                 name: 'chromium',
                 use: {
+                    ...devices['Desktop Chrome'],
                     viewport: null,
                     launchOptions: {
                         args: ['--disable-web-security', '--start-maximized'],
-                        // channel: 'chrome',
-                        slowMo: 0,
-                        headless: false,
+                        channel: 'chrome',
+                        slowMo: parseInt(ENV.SLOWMO) || 0,
+                        headless: ENV.HEADLESS === 'true',
                     },
                 },
             },
