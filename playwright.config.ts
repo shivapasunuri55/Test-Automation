@@ -70,7 +70,7 @@ module.exports = defineConfig({
                     viewport: null,
                     launchOptions: {
                         args: ['--disable-web-security', '--start-maximized'],
-                        // channel: 'chrome',
+                        channel: 'chrome',
                         slowMo: 0,
                         headless: false,
                     },
