@@ -89,6 +89,61 @@ export abstract class BasePage {
         return this.page.locator(selector);
     }
 
+    /**
+     * Helper to convert a limited set of Playwright locator expressions provided as strings
+     * (e.g., "getByLabel('Email')") into actual Locator instances.
+     *
+     * Supported patterns:
+     * - getByLabel('...')
+     * - getByPlaceholder('...')
+     * - getByText('...')
+     * - getByRole('role')
+     * - getByRole('role', { name: '...' })
+     */
+    getByLocatorExpression(expr: string): Locator {
+        const trimmed = expr.trim();
+
+        const parseSingleQuotedArg = (input: string): string | null => {
+            const match = input.match(/^\s*\(\s*'((?:\\'|[^'])*)'\s*\)\s*$/);
+            return match ? match[1].replace(/\\'/g, "'") : null;
+        };
+
+        if (trimmed.startsWith('getByLabel')) {
+            const arg = parseSingleQuotedArg(trimmed.replace(/^getByLabel/, ''));
+            if (arg === null) throw new Error(`Unsupported locator expression: ${expr}`);
+            return this.page.getByLabel(arg);
+        }
+
+        if (trimmed.startsWith('getByPlaceholder')) {
+            const arg = parseSingleQuotedArg(trimmed.replace(/^getByPlaceholder/, ''));
+            if (arg === null) throw new Error(`Unsupported locator expression: ${expr}`);
+            return this.page.getByPlaceholder(arg);
+        }
+
+        if (trimmed.startsWith('getByText')) {
+            const arg = parseSingleQuotedArg(trimmed.replace(/^getByText/, ''));
+            if (arg === null) throw new Error(`Unsupported locator expression: ${expr}`);
+            return this.page.getByText(arg);
+        }
+
+        if (trimmed.startsWith('getByRole')) {
+            // Supports:
+            // getByRole('button')
+            // getByRole('button', { name: 'Add to cart' })
+            const match = trimmed.match(
+                /^getByRole\(\s*'((?:\\'|[^'])*)'\s*(?:,\s*\{\s*name\s*:\s*'((?:\\'|[^'])*)'\s*\}\s*)?\)$/
+            );
+            if (!match) throw new Error(`Unsupported locator expression: ${expr}`);
+
+            const role = match[1].replace(/\\'/g, "'");
+            const name = match[2]?.replace(/\\'/g, "'");
+
+            return name ? this.page.getByRole(role as any, { name }) : this.page.getByRole(role as any);
+        }
+
+        throw new Error(`Unsupported locator expression: ${expr}`);
+    }
+
     async executeScript(script: string, ...args: any[]): Promise<any> {
         this.logger.info('Execute script');
         const result = await this.page.evaluate(script, ...args);
